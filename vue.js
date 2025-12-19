@@ -4,17 +4,33 @@ createApp({
   data() {
     return {
       emojis: [
-        "🐶","🐱","🐭","🐹","🐰","🦊",
-        "🐻","🐼","🐨","🐯","🦁","🐮",
-        "🐷","🐸","🐵","🦄","🐔","🐧"
+        "🐶",
+        "🐱",
+        "🐭",
+        "🐹",
+        "🐰",
+        "🦊",
+        "🐻",
+        "🐼",
+        "🐨",
+        "🐯",
+        "🦁",
+        "🐮",
+        "🐷",
+        "🐸",
+        "🐵",
+        "🦄",
+        "🐔",
+        "🐧",
       ],
 
       levels: {
-        easy:   { grid: 4, pairs: 8,  misses: 10 },
-        medium: { grid: 5, pairs: 12, misses: 8 },
-        hard:   { grid: 6, pairs: 18, misses: 6 }
+        easy: { grid: 3, pairs: 6, misses: 10 },
+        medium: { grid: 4, pairs: 8, misses: 8 },
+        hard: { grid: 5, pairs: 10, misses: 6 },
       },
-
+      showRules: false,
+counterRules:0,
       gameMode: "single",
       level: "easy",
 
@@ -29,36 +45,63 @@ createApp({
 
       currentPlayer: 1,
       scores: [0, 0],
-
-      showModal: false
+      gameStarted: false,
+      showModal: false,
     };
   },
 
   computed: {
     gridStyle() {
       return {
-        gridTemplateColumns: `repeat(${this.levels[this.level].grid}, 110px)`
+        gridTemplateColumns: `repeat(${this.levels[this.level].grid}, 110px)`,
       };
     },
 
     isTwoPlayer() {
       return this.gameMode === "two";
-    }
+    },
   },
-
+  watch: {
+    level() {
+      this.gameStarted = false;
+      this.cards = [];
+    },
+    gameMode() {
+      this.gameStarted = false;
+      this.cards = [];
+    },
+  },
   methods: {
-    startGame() {
+  startGame() {
+  const rulesSeen = sessionStorage.getItem("rulesSeen");
+
+  if (!rulesSeen) {
+    this.showRules = true;
+    sessionStorage.setItem("rulesSeen", "true");
+  } else {
+    this.beginGame();
+  }
+},
+
+
+    beginGame() {
+      
+      this.gameStarted = false; // hide board while resetting
+
       clearInterval(this.timer);
 
       const { pairs, misses } = this.levels[this.level];
 
-      this.cards = [...this.emojis.slice(0, pairs), ...this.emojis.slice(0, pairs)]
+      this.cards = [
+        ...this.emojis.slice(0, pairs),
+        ...this.emojis.slice(0, pairs),
+      ]
         .sort(() => Math.random() - 0.5)
-        .map(value => ({
+        .map((value) => ({
           value,
           flipped: false,
           matched: false,
-          owner: null
+          owner: null,
         }));
 
       this.flipped = [];
@@ -75,14 +118,16 @@ createApp({
       } else {
         this.timeLeft = 0;
       }
+      this.gameStarted = true;
+    },
+
+    closeRules() {
+      this.showRules = false;
+      this.beginGame();
     },
 
     flipCard(card) {
-      if (
-        card.flipped ||
-        card.matched ||
-        this.flipped.length === 2
-      ) return;
+      if (card.flipped || card.matched || this.flipped.length === 2) return;
 
       card.flipped = true;
       card.owner = this.currentPlayer;
@@ -102,6 +147,10 @@ createApp({
         a.matched = b.matched = true;
         this.matched++;
 
+        this.playSound("sound-match");
+
+
+
         if (this.isTwoPlayer) {
           this.scores[this.currentPlayer - 1]++;
         }
@@ -112,6 +161,7 @@ createApp({
           this.endGame();
         }
       } else {
+        this.playSound("sound-wrong");
         setTimeout(() => {
           a.flipped = b.flipped = false;
           a.owner = b.owner = null;
@@ -127,6 +177,14 @@ createApp({
       }
     },
 
+    playSound(id) {
+      const sound = document.getElementById(id);
+      if (sound) {
+        sound.currentTime = 0;
+        sound.play();
+      }
+    },
+
     startTimer() {
       this.timer = setInterval(() => {
         this.timeLeft--;
@@ -135,12 +193,15 @@ createApp({
     },
 
     endGame() {
-      clearInterval(this.timer);
+      this.playSound("sound-win");
       this.showModal = true;
+
+      clearInterval(this.timer);
+
     },
 
     closeModal() {
       this.showModal = false;
-    }
-  }
+    },
+  },
 }).mount("#app");
