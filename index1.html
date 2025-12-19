@@ -7,7 +7,16 @@
 
   <!-- Your existing CSS -->
   <link rel="stylesheet" href="style.css" />
+
+  <!-- SOUND EFFECTS -->
+<audio id="sound-start" src="sounds/start.mp3"></audio>
+<audio id="sound-flip" src="sounds/flip.mp3"></audio>
+<audio id="sound-match" src="sounds/match.mp3"></audio>
+<audio id="sound-wrong" src="sounds/wrong.mp3"></audio>
+<audio id="sound-win" src="sounds/win.mp3"></audio>
+
 </head>
+
 <body>
 
   <!-- VUE APP ROOT -->
@@ -41,6 +50,7 @@
 
     <!-- GAME BOARD -->
     <div
+    v-if="gameStarted"
       id="game-board"
       class="board"
       :style="{ gridTemplateColumns: `repeat(${levels[level].grid}, max-content)` }"
@@ -96,12 +106,31 @@
         </div>
       </div>
     </div>
+    
+<!-- RULES MODAL -->
+<div class="modal" :class="{ show: showRules }">
+  <div class="modal-content">
+    <div class="modal-title">📜 Game Rules</div>
+
+    <div class="modal-message" style="text-align:left">
+      • Flip two cards at a time<br>
+      • Match identical cards to score<br>
+      • Wrong match loses a chance / turn<br>
+      • Finish all pairs to win<br>
+      • Player with most matches wins (2-Player)
+    </div>
+
+    <button class="modal-button" @click="closeRules">
+      Start Playing
+    </button>
+  </div>
+</div>
 
     <!-- WIN / GAME OVER MODAL -->
     <div class="modal" :class="{ show: showModal }" @click.self="closeModal">
       <div class="modal-content">
-        <div class="modal-icon">
-          {{ gameMode === 'single' ? '🎉' : '🏆' }}
+        <div class="modal-icon" v-if="gameMode === 'single' && timeLeft > 0">
+          🎉
         </div>
 
         <div class="modal-title">
@@ -144,3 +173,4 @@
 
 </body>
 </html>
+
